@@ -1,0 +1,24 @@
+{
+  "name": "node-opcua-mqtt-gateway",
+  "version": "1.0.0",
+  "description": "A Node.js application to bridge OPC UA servers and MQTT brokers.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "OPC UA",
+    "MQTT",
+    "IoT",
+    "Node.js",
+    "Industrial Automation"
+  ],
+  "author": "Harshad Joshi",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "node-opcua": "^2.0.0",
+    "mqtt": "^4.2.6",
+    "toml": "^3.0.0"
+  }
+}
+
