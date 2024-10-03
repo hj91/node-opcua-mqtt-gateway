@@ -23,13 +23,47 @@ const fs = require("fs");
 const toml = require("toml");
 const path = require("path");
 
+// Helper function to check file existence
+function fileExists(filePath) {
+    try {
+        return fs.existsSync(filePath);
+    } catch (err) {
+        console.error(`Error checking existence of ${filePath}:`, err);
+        return false;
+    }
+}
+
 // Load configuration
-const configPath = path.join(__dirname, "config2.toml");
-const config = toml.parse(fs.readFileSync(configPath, "utf-8"));
+let config;
+const configPath = path.join(__dirname, "config.toml");
+
+if (!fileExists(configPath)) {
+    console.error(`Configuration file not found: ${configPath}`);
+    process.exit(1);
+}
+
+try {
+    config = toml.parse(fs.readFileSync(configPath, "utf-8"));
+    console.log("Configuration loaded successfully.");
+} catch (err) {
+    console.error("Error parsing configuration file:", err);
+    process.exit(1);
+}
 
 // OPC UA connection setup
 const clientCertificateFile = path.join(__dirname, "certs/own/certs/client_selfsigned_cert.pem");
 const clientPrivateKeyFile = path.join(__dirname, "certs/own/private/private_key.pem");
+
+// Check for certificate and key files
+if (!fileExists(clientCertificateFile)) {
+    console.error(`Client certificate not found: ${clientCertificateFile}`);
+    process.exit(1);
+}
+
+if (!fileExists(clientPrivateKeyFile)) {
+    console.error(`Client private key not found: ${clientPrivateKeyFile}`);
+    process.exit(1);
+}
 
 const client = opcua.OPCUAClient.create({
     certificateFile: clientCertificateFile,
@@ -40,10 +74,19 @@ const client = opcua.OPCUAClient.create({
 });
 
 // MQTT connection setup
-const mqttClient = mqtt.connect(`mqtt://${config.mqtt.host}:${config.mqtt.port}`, {
+const mqttOptions = {
     username: config.mqtt.username,
     password: config.mqtt.password
-});
+};
+
+let mqttClient;
+try {
+    mqttClient = mqtt.connect(`mqtt://${config.mqtt.host}:${config.mqtt.port}`, mqttOptions);
+    console.log("MQTT client connected.");
+} catch (err) {
+    console.error("Error connecting to MQTT broker:", err);
+    process.exit(1);
+}
 
 // Function to log data to MQTT
 function logToMqtt(topic, value) {
@@ -62,7 +105,7 @@ async function writeToOpcua(session, metric, value) {
     try {
         const dataValue = {
             value: {
-                dataType: opcua.DataType.Double,  // Change this based on your datatype
+                dataType: opcua.DataType.Double,  // Change this based on your datatype - ToDo make it configurable in config.toml
                 value: value,
             }
         };
@@ -113,8 +156,12 @@ async function connectToServer() {
 
                 mqttClient.on('message', async (topic, message) => {
                     if (topic === metric.topic) {
-                        const parsedMessage = JSON.parse(message.toString());
-                        await writeToOpcua(session, metric, parsedMessage.value);
+                        try {
+                            const parsedMessage = JSON.parse(message.toString());
+                            await writeToOpcua(session, metric, parsedMessage.value);
+                        } catch (err) {
+                            console.error(`Error processing message for topic ${topic}:`, err);
+                        }
                     }
                 });
             }
@@ -122,14 +169,20 @@ async function connectToServer() {
 
         // Handle clean exit
         process.on('SIGINT', async () => {
-            await session.close();
-            await client.disconnect();
-            mqttClient.end();
-            console.log("Session closed and client disconnected.");
+            console.log("Caught interrupt signal, closing session and disconnecting...");
+            try {
+                await session.close();
+                await client.disconnect();
+                mqttClient.end();
+                console.log("Session closed and client disconnected.");
+            } catch (err) {
+                console.error("Error during disconnect:", err);
+            }
             process.exit(0);
         });
     } catch (err) {
-        console.error("An error occurred:", err);
+        console.error("Error occurred while connecting or creating session:", err);
+        process.exit(1);
     }
 }
 
