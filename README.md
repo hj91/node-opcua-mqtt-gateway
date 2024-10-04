@@ -2,7 +2,7 @@
 
 ## Description
 
-The **Node OPC UA MQTT Gateway** is a Node.js application that facilitates communication between an OPC UA server and an MQTT broker. This application allows you to read and write data from an OPC UA server using MQTT, enabling seamless integration of industrial automation data into IoT applications.
+The **Bufferstack.IO OPC UA MQTT Gateway** is an IIoT Gateway application that facilitates communication between an OPC UA server and an MQTT broker. This application allows you to read and write data from an OPC UA server using MQTT, enabling seamless integration of industrial automation data into IoT applications.
 
 ## Features
 
@@ -61,6 +61,8 @@ tags = { machine = "machine_1", fields = "valid_job" }
 nodeId = "ns=2;s=Painting.MachineID.Valid_job"
 interval = 1000
 topic = "painting/machineID/valid_job"
+mode = "pub"
+# Options: pub, sub, pubsub
 
 [[metrics]]
 datatype = "number"
@@ -68,6 +70,8 @@ tags = { machine = "machine_2", fields = "invalid_job" }
 nodeId = "ns=2;s=Painting.MachineID.Invalid_job"
 interval = 1000
 topic = "painting/machineID/invalid_job"
+mode = "pubsub"
+# Options: pub, sub, pubsub
 ```
 
 ## Usage
@@ -79,6 +83,14 @@ npm start
 ```
 
 The application will connect to the OPC UA server, retrieve specified metrics, and publish them to the configured MQTT topics.
+
+## Docker
+
+To run the dockerized version of application, run:
+
+```bash
+docker run -d   -v ./certs:/app/certs   -v ./config:/app/config   --name opcua-mqtt-gateway   node-opcua-mqtt-gateway
+```
 
 ## License
 
