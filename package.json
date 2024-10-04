@@ -1,7 +1,7 @@
 {
   "name": "node-opcua-mqtt-gateway",
-  "version": "1.0.1",
-  "description": "A Node.js application to bridge OPC UA servers and MQTT brokers by Bufferstack.IO Aanalytics Technology LLP, Pune.",
+  "version": "1.0.2",
+  "description": "An IIoT Gateway application to bridge OPC UA servers and MQTT brokers by Bufferstack.IO Aanalytics Technology LLP, Pune.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
